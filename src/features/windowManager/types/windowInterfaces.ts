@@ -4,8 +4,6 @@ export interface Window {
   id: string;
   isMinimized: boolean;
   isMaximized: boolean;
-  windowComponent: React.ComponentType<any>;
-  windowComponentKey: string;
   xPos: number;
   yPos: number;
   minimumWidth: number;

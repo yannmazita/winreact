@@ -19,8 +19,6 @@ const windowsSlice = createSlice({
         id,
         isMinimized: false,
         isMaximized: false,
-        windowComponent: () => null, // Default to null component
-        windowComponentKey: uuidv4(),
         xPos: 100,
         yPos: 100,
         width: 800,
@@ -81,14 +79,6 @@ const windowsSlice = createSlice({
         state.currentZIndex = highestZIndex + 1;
       }
     },
-    setWindowComponent: (state, action: PayloadAction<{ id: string; component: React.ComponentType<any> }>) => {
-      const { id, component } = action.payload;
-      const window = state.windows[id];
-      if (window) {
-        window.windowComponent = component;
-        window.windowComponentKey = uuidv4();
-      }
-    },
   },
 });
 
@@ -99,7 +89,6 @@ export const {
   maximizeWindow,
   minimizeWindow,
   focusWindow,
-  setWindowComponent,
 } = windowsSlice.actions;
 
 export default windowsSlice.reducer;
