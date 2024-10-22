@@ -2,7 +2,7 @@
 
 import React, { useCallback, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectWindow, updateWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow } from '../store/windowsSlice';
+import { selectWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow } from '../store/windowsSlice';
 import { useDraggable } from '../hooks/useDraggable';
 import { useResizable } from '../hooks/useResizable';
 import { RootState } from '@/store';
@@ -16,7 +16,7 @@ interface AppWindowProps {
 const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
   const dispatch = useDispatch();
   const window = useSelector((state: RootState) => selectWindow(state, id));
-  const { toggleDrag, updateRootElement } = useDraggable(id);
+  const { startDrag, updateRootElement } = useDraggable(id);
   const { toggleResize } = useResizable(id);
   const componentRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +43,7 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
   if (!window) return null;
 
   const styleObject = {
+    position: 'absolute' as const,
     top: window.isMaximized ? '0' : `${window.yPos}px`,
     left: window.isMaximized ? '0' : `${window.xPos}px`,
     width: window.isMaximized ? '100%' : `${window.width}px`,
@@ -59,7 +60,7 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
     >
       <div
         className="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move"
-        onMouseDown={toggleDrag}
+        onMouseDown={startDrag}
       >
         <div className="w-fit">Drag Me Up!</div>
         <div className="w-fit">

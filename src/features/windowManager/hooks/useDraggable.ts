@@ -1,82 +1,106 @@
 // src/features/windowManager/hooks/useDraggable.ts
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectWindow, updateWindow } from '../store/windowsSlice';
 import { RootState } from '@/store';
 
 export function useDraggable(id: string) {
-    const dispatch = useDispatch();
-    const window = useSelector((state: RootState) => selectWindow(state, id));
-    const rootElement = useRef<HTMLDivElement | null>(null);
-    const [heightOffset, setHeightOffset] = useState(0);
+  const dispatch = useDispatch();
+  const window = useSelector((state: RootState) => selectWindow(state, id));
+  const rootElement = useRef<HTMLDivElement | null>(null);
+  const [heightOffset, setHeightOffset] = useState(0);
+  const initialMousePosition = useRef({ x: 0, y: 0 });
+  const initialWindowPosition = useRef({ x: 0, y: 0 });
 
-    const updateRootElement = useCallback((element: HTMLDivElement | null) => {
-        rootElement.current = element;
-        if (element) {
-            setHeightOffset(element.parentElement?.offsetTop ?? 0);
-        }
-    }, []);
+  const handleDrag = useCallback((event: MouseEvent) => {
+    if (!rootElement.current || !window) return;
+    if (window.isMaximized || window.isMinimized) return;
 
-    const handleDrag = useCallback((event: MouseEvent) => {
-        if (!rootElement.current || !window?.dragging) return;
-        if (window.isMaximized || window.isMinimized) return;
+    const parent = rootElement.current.parentElement;
+    if (!parent) return;
 
-        const parent = rootElement.current.parentElement;
-        if (!parent) return;
+    const parentRect = parent.getBoundingClientRect();
+    const dx = event.clientX - initialMousePosition.current.x;
+    const dy = event.clientY - initialMousePosition.current.y;
 
-        const parentRect = parent.getBoundingClientRect();
-        const dx = event.clientX - window.lastMouseX;
-        const dy = event.clientY - window.lastMouseY;
+    let newXPos = initialWindowPosition.current.x + dx;
+    let newYPos = initialWindowPosition.current.y + dy;
 
-        let newXPos = window.xPos + dx;
-        let newYPos = window.yPos + dy;
+    newXPos = Math.max(0, Math.min(newXPos, parentRect.width - window.width));
+    newYPos = Math.max(0, Math.min(newYPos, parentRect.height - window.height - heightOffset));
 
-        newXPos = Math.max(0, Math.min(newXPos, parentRect.width - window.width));
-        newYPos = Math.max(0, Math.min(newYPos, parentRect.height - window.height - heightOffset));
+    dispatch(updateWindow({
+      id,
+      updates: {
+        xPos: newXPos,
+        yPos: newYPos,
+        lastMouseX: event.clientX,
+        lastMouseY: event.clientY
+      }
+    }));
+  }, [dispatch, id, window, heightOffset]);
 
-        dispatch(updateWindow({
-            id,
-            updates: {
-                xPos: newXPos,
-                yPos: newYPos,
-                lastMouseX: event.clientX,
-                lastMouseY: event.clientY
-            }
-        }));
-    }, [dispatch, id, window, heightOffset]);
+  const stopDrag = useCallback((event: MouseEvent) => {
+    document.removeEventListener('mousemove', handleDrag);
+    document.removeEventListener('mouseup', stopDrag);
 
-    const stopDrag = useCallback((event: MouseEvent) => {
-        dispatch(updateWindow({
-            id,
-            updates: {
-                dragging: false,
-                lastMouseX: event.clientX,
-                lastMouseY: event.clientY
-            }
-        }));
-        document.removeEventListener('mousemove', handleDrag);
-    }, [dispatch, handleDrag, id]);
+    dispatch(updateWindow({
+      id,
+      updates: {
+        lastMouseX: event.clientX,
+        lastMouseY: event.clientY
+      }
+    }));
+  }, [dispatch, handleDrag, id]);
 
-    const toggleDrag = useCallback((event: React.MouseEvent<HTMLElement>) => {
-        if (rootElement.current) {
-            setHeightOffset(rootElement.current.parentElement?.offsetTop ?? 0);
-        }
+  const startDrag = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    if (window?.isMaximized) return;
 
-        dispatch(updateWindow({
-            id,
-            updates: {
-                dragging: true,
-                lastMouseX: event.clientX,
-                lastMouseY: event.clientY
-            }
-        }));
-        document.addEventListener('mousemove', handleDrag);
-        document.addEventListener('mouseup', stopDrag, { once: true });
-    }, [dispatch, handleDrag, id, stopDrag]);
+    if (rootElement.current) {
+      setHeightOffset(rootElement.current.parentElement?.offsetTop ?? 0);
+    }
 
-    return {
-        toggleDrag,
-        updateRootElement,
+    initialMousePosition.current = { x: event.clientX, y: event.clientY };
+    initialWindowPosition.current = { x: window?.xPos ?? 0, y: window?.yPos ?? 0 };
+
+    dispatch(updateWindow({
+      id,
+      updates: {
+        lastMouseX: event.clientX,
+        lastMouseY: event.clientY
+      }
+    }));
+
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', stopDrag);
+  }, [dispatch, handleDrag, stopDrag, window]);
+
+  const updateRootElement = useCallback((element: HTMLDivElement | null) => {
+    rootElement.current = element;
+    if (element) {
+      setHeightOffset(element.parentElement?.offsetTop ?? 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        console.log('Parent dimensions changed', entry.contentRect);
+      }
+    });
+
+    if (rootElement.current?.parentElement) {
+      resizeObserver.observe(rootElement.current.parentElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
     };
+  }, []);
+
+  return {
+    startDrag,
+    updateRootElement,
+  };
 }
