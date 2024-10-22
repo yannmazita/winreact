@@ -1,6 +1,6 @@
 // src/features/windowManager/hooks/useDraggable.ts
 
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectWindow, updateWindow } from '../store/windowsSlice';
 import { RootState } from '@/store';
@@ -81,22 +81,6 @@ export function useDraggable(id: string) {
     if (element) {
       setHeightOffset(element.parentElement?.offsetTop ?? 0);
     }
-  }, []);
-
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        console.log('Parent dimensions changed', entry.contentRect);
-      }
-    });
-
-    if (rootElement.current?.parentElement) {
-      resizeObserver.observe(rootElement.current.parentElement);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
   }, []);
 
   return {
