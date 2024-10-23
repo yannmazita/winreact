@@ -16,13 +16,14 @@ interface AppWindowProps {
 const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
   const dispatch = useDispatch();
   const window = useSelector((state: RootState) => selectWindow(state, id));
-  const { startDrag, updateRootElement } = useDraggable(id);
-  const { toggleResize } = useResizable(id);
+  const { startDrag, updateRootElement: updateDraggableElement } = useDraggable(id);
+  const { toggleResize, updateRootElement: updateResizableElement } = useResizable(id);
   const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    updateRootElement(componentRef.current);
-  }, [updateRootElement]);
+    updateDraggableElement(componentRef.current);
+    updateResizableElement(componentRef.current);
+ }, [updateDraggableElement, updateResizableElement]);
 
   const closeComponent = useCallback(() => {
     dispatch(closeWindow(id));

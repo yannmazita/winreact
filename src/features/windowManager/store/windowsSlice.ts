@@ -2,7 +2,7 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
-import { Window, WindowDualPaneContent, WindowsState } from '../types/windowInterfaces';
+import { Window, WindowsState, WindowType } from '../types/windowInterfaces';
 
 const initialState: WindowsState = {
   windows: {},
@@ -13,31 +13,30 @@ const windowsSlice = createSlice({
   name: 'windows',
   initialState,
   reducers: {
-    createWindow: (state, action: PayloadAction<Partial<Window>>) => {
+    createWindow: (state, action: PayloadAction<{ type: WindowType }>) => {
       const id = uuidv4();
       const newWindow: Window = {
         id,
+        type: action.payload.type,
         isMinimized: false,
         isMaximized: false,
         xPos: 100,
         yPos: 100,
         width: 800,
         height: 600,
+        zIndex: state.currentZIndex++,
         minimumWidth: 320,
         maximumWidth: 1024,
         minimumHeight: 240,
         maximumHeight: 768,
         initialWidth: 800,
         initialHeight: 600,
-        restoreSize: { width: 640, height: 480, xPos: 100, yPos: 100 },
-        windowProps: { id },
+        restoreSize: { width: 800, height: 600, xPos: 100, yPos: 100 },
         dragging: false,
         resizing: false,
         resizeDirection: '',
         lastMouseX: 0,
         lastMouseY: 0,
-        zIndex: state.currentZIndex++,
-        ...action.payload,
       };
       state.windows[id] = newWindow;
     },
@@ -56,12 +55,16 @@ const windowsSlice = createSlice({
         if (!window.isMaximized) {
           window.restoreSize = { width: window.width, height: window.height, xPos: window.xPos, yPos: window.yPos };
           window.isMaximized = true;
+          window.xPos = 0;
+          window.yPos = 0;
+          window.width = window.maximumWidth;
+          window.height = window.maximumHeight;
         } else {
+          window.isMaximized = false;
           window.width = window.restoreSize.width;
           window.height = window.restoreSize.height;
           window.xPos = window.restoreSize.xPos;
           window.yPos = window.restoreSize.yPos;
-          window.isMaximized = false;
         }
       }
     },
@@ -74,9 +77,7 @@ const windowsSlice = createSlice({
     focusWindow: (state, action: PayloadAction<string>) => {
       const window = state.windows[action.payload];
       if (window) {
-        const highestZIndex = Math.max(...Object.values(state.windows).map(w => w.zIndex)) + 1;
-        window.zIndex = highestZIndex;
-        state.currentZIndex = highestZIndex + 1;
+        window.zIndex = state.currentZIndex++;
       }
     },
   },
@@ -96,7 +97,3 @@ export default windowsSlice.reducer;
 // Selectors
 export const selectWindows = (state: { windows: WindowsState }) => state.windows.windows;
 export const selectWindow = (state: { windows: WindowsState }, id: string) => state.windows.windows[id];
-export const selectDualPaneContent = (state: { windows: WindowsState }, id: string) => {
-  const window = state.windows.windows[id];
-  return window?.windowProps?.dualPaneContents as WindowDualPaneContent[] | undefined;
-};

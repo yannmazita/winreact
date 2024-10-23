@@ -1,11 +1,17 @@
 // src/features/windowManager/types/windowTypes.ts
 
+export type WindowType = 'regular' | 'dualPane';
+
 export interface Window {
   id: string;
+  type: WindowType;
   isMinimized: boolean;
   isMaximized: boolean;
   xPos: number;
   yPos: number;
+  width: number;
+  height: number;
+  zIndex: number;
   minimumWidth: number;
   maximumWidth: number;
   minimumHeight: number;
@@ -13,20 +19,11 @@ export interface Window {
   initialWidth: number;
   initialHeight: number;
   restoreSize: { width: number; height: number; xPos: number; yPos: number };
-  windowProps: Record<string, any>;
   dragging: boolean;
   resizing: boolean;
   resizeDirection: string;
   lastMouseX: number;
   lastMouseY: number;
-  width: number;
-  height: number;
-  zIndex: number;
-}
-
-export interface WindowDualPaneContent {
-  label: string;
-  component: React.ComponentType<any>;
 }
 
 export interface WindowsState {
