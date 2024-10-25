@@ -2,7 +2,7 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
-import { Window, WindowsState, WindowType } from '../types/windowInterfaces';
+import { Window, WindowComponentType, WindowsState } from '../types/windowInterfaces';
 
 const initialState: WindowsState = {
   windows: {},
@@ -13,11 +13,12 @@ const windowsSlice = createSlice({
   name: 'windows',
   initialState,
   reducers: {
-    createWindow: (state, action: PayloadAction<{ type: WindowType }>) => {
+    createWindow: (state, action: PayloadAction<Partial<Window>>) => {
       const id = uuidv4();
       const newWindow: Window = {
         id,
-        type: action.payload.type,
+        windowComponentType: 'default',
+        windowProps: { id },
         isMinimized: false,
         isMaximized: false,
         xPos: 100,
@@ -37,6 +38,7 @@ const windowsSlice = createSlice({
         resizeDirection: '',
         lastMouseX: 0,
         lastMouseY: 0,
+        ...action.payload,
       };
       state.windows[id] = newWindow;
     },
@@ -80,6 +82,18 @@ const windowsSlice = createSlice({
         window.zIndex = state.currentZIndex++;
       }
     },
+    setWindowComponentType: (state, action: PayloadAction<{ id: string; componentType: WindowComponentType }>) => {
+      const window = state.windows[action.payload.id];
+      if (window) {
+        window.windowComponentType = action.payload.componentType;
+      }
+    },
+    setActivePane: (state, action: PayloadAction<{ id: string; paneIndex: number }>) => {
+      const window = state.windows[action.payload.id];
+      if (window?.windowProps.dualPaneContents) {
+        window.windowProps.activePane = action.payload.paneIndex;
+      }
+    },
   },
 });
 
@@ -90,6 +104,8 @@ export const {
   maximizeWindow,
   minimizeWindow,
   focusWindow,
+  setWindowComponentType,
+  setActivePane,
 } = windowsSlice.actions;
 
 export default windowsSlice.reducer;
@@ -97,3 +113,5 @@ export default windowsSlice.reducer;
 // Selectors
 export const selectWindows = (state: { windows: WindowsState }) => state.windows.windows;
 export const selectWindow = (state: { windows: WindowsState }, id: string) => state.windows.windows[id];
+export const selectDualPaneContent = (state: { windows: WindowsState }, id: string) =>
+  state.windows.windows[id]?.windowProps?.dualPaneContents;
