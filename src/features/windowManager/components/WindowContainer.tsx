@@ -2,7 +2,7 @@
 
 import React, { useCallback, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow, setWindowComponentType, setActivePane } from '../store/windowsSlice';
+import { selectWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow, setActivePane } from '../store/windowsSlice';
 import { useDraggable } from '../hooks/useDraggable';
 import { useResizable } from '../hooks/useResizable';
 import { RootState } from '@/store';
@@ -45,9 +45,7 @@ const WindowContainer: React.FC<WindowContainerProps> = ({ id }) => {
     dispatch(setActivePane({ id, paneIndex }));
   };
 
-  if (!window) return null;
-
-  const WindowComponent = componentMap[currentWindow.windowComponentType];
+  if (!currentWindow) return null;
 
   const styleObject = {
     position: 'absolute' as const,
@@ -57,6 +55,15 @@ const WindowContainer: React.FC<WindowContainerProps> = ({ id }) => {
     height: currentWindow.isMaximized ? '100%' : `${currentWindow.height}px`,
     zIndex: currentWindow.zIndex,
   };
+
+  let WindowComponent;
+  if (currentWindow.windowProps.dualPaneContents) {
+    const activePane = currentWindow.windowProps.activePane || 0;
+    const activeComponentType = currentWindow.windowProps.dualPaneContents[activePane].componentType;
+    WindowComponent = componentMap[activeComponentType];
+  } else {
+    WindowComponent = componentMap[currentWindow.windowComponentType];
+  }
 
   return (
     <div
@@ -93,13 +100,13 @@ const WindowContainer: React.FC<WindowContainerProps> = ({ id }) => {
               ))}
             </ul>
           </div>
-          <div className="content-container">
+          <div className="content-container col-span-2">
             <WindowComponent id={id} {...currentWindow.windowProps} />
           </div>
         </div>
       ) : (
         <div className="content-container">
-          <WindowComponent {...currentWindow.windowProps} />
+          <WindowComponent id={id} {...currentWindow.windowProps} />
         </div>
       )}
       {!currentWindow.isMaximized && (

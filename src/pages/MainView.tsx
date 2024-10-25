@@ -18,11 +18,11 @@ const MainView: React.FC = () => {
     dispatch(createWindow({ windowComponentType: 'default' }));
   };
   const handleCreateDualPaneWindow = () => {
-    createDualPaneWindow(dispatch, 'default', dualPaneContents);
+    createDualPaneWindow(dispatch, 'defaultDualPane', dualPaneContents);
   };
 
   return (
-    <div className="relative size-full overflow-hidden">
+    <>
       <div className="p-4 space-x-4">
         <button
           onClick={handleCreateRegularWindow}
@@ -35,13 +35,14 @@ const MainView: React.FC = () => {
           Open Dual Pane Window
         </button>
       </div>
-      <div id="window-container" className="relative w-full h-full">
-
-        {Object.entries(windows).map(([id, window]) => (
-          <WindowContainer key={id} id={id} />
-        ))}
+      <div className="relative size-full overflow-hidden">
+        <div id="window-container" className="relative size-full overflow-hidden">
+          {Object.entries(windows).map(([id, window]) => (
+            <WindowContainer key={id} id={id} />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
