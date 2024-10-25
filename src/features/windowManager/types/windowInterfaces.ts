@@ -1,10 +1,20 @@
 // src/features/windowManager/types/windowTypes.ts
 
-export type WindowType = 'regular' | 'dualPane';
+export type WindowComponentType = 'default' | 'defaultDualPane' | 'custom';
+
+export interface WindowDualPaneContent {
+  label: string;
+  componentType: WindowComponentType;
+}
 
 export interface Window {
   id: string;
-  type: WindowType;
+  windowComponentType: WindowComponentType;
+  windowProps: {
+    id?: string;
+    dualPaneContents?: WindowDualPaneContent[];
+    [key: string]: any;
+  };
   isMinimized: boolean;
   isMaximized: boolean;
   xPos: number;
