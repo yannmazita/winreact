@@ -1,21 +1,21 @@
-// src/features/windowManager/components/AppWindow.tsx
+// src/features/windowManager/components/WindowContainer.tsx
 
 import React, { useCallback, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow } from '../store/windowsSlice';
+import { selectWindow, closeWindow, maximizeWindow, minimizeWindow, focusWindow, setWindowComponentType, setActivePane } from '../store/windowsSlice';
 import { useDraggable } from '../hooks/useDraggable';
 import { useResizable } from '../hooks/useResizable';
 import { RootState } from '@/store';
+import { componentMap } from '../utils/componentMap';
 import '../styles/style.css';
 
-interface AppWindowProps {
+interface WindowContainerProps {
   id: string;
-  children: React.ReactNode;
 }
 
-const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
+const WindowContainer: React.FC<WindowContainerProps> = ({ id }) => {
   const dispatch = useDispatch();
-  const window = useSelector((state: RootState) => selectWindow(state, id));
+  const currentWindow = useSelector((state: RootState) => selectWindow(state, id));
   const { startDrag, updateRootElement: updateDraggableElement } = useDraggable(id);
   const { toggleResize, updateRootElement: updateResizableElement } = useResizable(id);
   const componentRef = useRef<HTMLDivElement>(null);
@@ -23,7 +23,7 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
   useEffect(() => {
     updateDraggableElement(componentRef.current);
     updateResizableElement(componentRef.current);
- }, [updateDraggableElement, updateResizableElement]);
+  }, [updateDraggableElement, updateResizableElement]);
 
   const closeComponent = useCallback(() => {
     dispatch(closeWindow(id));
@@ -41,15 +41,21 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
     dispatch(focusWindow(id));
   }, [dispatch, id]);
 
+  const handlePaneChange = (paneIndex: number) => {
+    dispatch(setActivePane({ id, paneIndex }));
+  };
+
   if (!window) return null;
+
+  const WindowComponent = componentMap[currentWindow.windowComponentType];
 
   const styleObject = {
     position: 'absolute' as const,
-    top: window.isMaximized ? '0' : `${window.yPos}px`,
-    left: window.isMaximized ? '0' : `${window.xPos}px`,
-    width: window.isMaximized ? '100%' : `${window.width}px`,
-    height: window.isMaximized ? '100%' : `${window.height}px`,
-    zIndex: window.zIndex,
+    top: currentWindow.isMaximized ? '0' : `${currentWindow.yPos}px`,
+    left: currentWindow.isMaximized ? '0' : `${currentWindow.xPos}px`,
+    width: currentWindow.isMaximized ? '100%' : `${currentWindow.width}px`,
+    height: currentWindow.isMaximized ? '100%' : `${currentWindow.height}px`,
+    zIndex: currentWindow.zIndex,
   };
 
   return (
@@ -67,15 +73,36 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
         <div className="w-fit">
           <button className="mx-2" onClick={minimizeComponent}>Minimize</button>
           <button className="mx-2" onClick={maximizeComponent}>
-            {window.isMaximized ? 'Restore' : 'Maximize'}
+            {currentWindow.isMaximized ? 'Restore' : 'Maximize'}
           </button>
           <button className="mx-2" onClick={closeComponent}>Close</button>
         </div>
       </div>
-      <div className="content-container">
-        {children}
-      </div>
-      {!window.isMaximized && (
+      {currentWindow.windowProps.dualPaneContents ? (
+        <div className="p-2 h-full w-full grid grid-cols-3">
+          <div className="col-span-1 border border-ts-blue mr-1">
+            <ul>
+              {currentWindow.windowProps.dualPaneContents.map((item, index) => (
+                <li
+                  key={index}
+                  onClick={() => handlePaneChange(index)}
+                  className={`cursor-pointer hover:bg-gray-100 ${index === currentWindow.windowProps.activePane ? 'bg-blue-200' : ''}`}
+                >
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="content-container">
+            <WindowComponent id={id} {...currentWindow.windowProps} />
+          </div>
+        </div>
+      ) : (
+        <div className="content-container">
+          <WindowComponent {...currentWindow.windowProps} />
+        </div>
+      )}
+      {!currentWindow.isMaximized && (
         <>
           <div className="resizer se" onMouseDown={(e) => toggleResize('se', e)}></div>
           <div className="resizer sw" onMouseDown={(e) => toggleResize('sw', e)}></div>
@@ -91,4 +118,4 @@ const AppWindow: React.FC<AppWindowProps> = ({ id, children }) => {
   );
 };
 
-export default AppWindow;
+export default WindowContainer;

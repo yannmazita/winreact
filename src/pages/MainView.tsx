@@ -1,21 +1,24 @@
-// src/views/MainView.tsx
-
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { createWindow, selectWindows } from '../features/windowManager/store/windowsSlice';
-import AppWindow from '../features/windowManager/components/AppWindow';
-import DualPaneWindow from '../features/windowManager/components/DualPaneWindow';
+import { createDualPaneWindow } from '../features/windowManager/utils/createDualPaneWindow';
+import WindowContainer from '../features/windowManager/components/WindowContainer';
+import { WindowDualPaneContent } from '@/features/windowManager/types/windowInterfaces';
 
 const MainView: React.FC = () => {
   const dispatch = useDispatch();
   const windows = useSelector(selectWindows);
 
-  const handleCreateRegularWindow = () => {
-    dispatch(createWindow({ type: 'regular' }));
-  };
+  const dualPaneContents: WindowDualPaneContent[] = [
+    { label: 'Pane 1', componentType: 'defaultDualPane' },
+    { label: 'Pane 2', componentType: 'default' },
+  ];
 
+  const handleCreateRegularWindow = () => {
+    dispatch(createWindow({ windowComponentType: 'default' }));
+  };
   const handleCreateDualPaneWindow = () => {
-    dispatch(createWindow({ type: 'dualPane' }));
+    createDualPaneWindow(dispatch, 'default', dualPaneContents);
   };
 
   return (
@@ -33,26 +36,10 @@ const MainView: React.FC = () => {
         </button>
       </div>
       <div id="window-container" className="relative w-full h-full">
-        {Object.entries(windows).map(([id, window]) => {
-          if (window.type === 'dualPane') {
-            return (
-              <DualPaneWindow
-                key={id}
-                id={id}
-                dualPaneContent={[
-                  { label: 'Pane 1', content: <div>Content for Pane 1</div> },
-                  { label: 'Pane 2', content: <div>Content for Pane 2</div> },
-                ]}
-              />
-            );
-          } else {
-            return (
-              <AppWindow key={id} id={id}>
-                <div>Regular window content</div>
-              </AppWindow>
-            );
-          }
-        })}
+
+        {Object.entries(windows).map(([id, window]) => (
+          <WindowContainer key={id} id={id} />
+        ))}
       </div>
     </div>
   );

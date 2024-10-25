@@ -1,4 +1,4 @@
-// src/features/windowManager/components/AppDefaultWindow.tsx
+// src/features/windowManager/components/DefaultWindow.tsx
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
@@ -6,11 +6,11 @@ import { selectWindow } from '../store/windowsSlice';
 import { RootState } from '../../../store';
 import { Window } from '../types/windowInterfaces';
 
-interface AppDefaultWindowProps {
+interface DefaultWindowProps {
   id: string;
 }
 
-const AppDefaultWindow: React.FC<AppDefaultWindowProps> = ({ id }) => {
+const DefaultWindow: React.FC<DefaultWindowProps> = ({ id }) => {
   const window = useSelector((state: RootState) => selectWindow(state, id));
   const [changedProperties, setChangedProperties] = useState<Set<string>>(new Set());
   const prevWindowRef = useRef<Window | null>(null);
@@ -37,7 +37,7 @@ const AppDefaultWindow: React.FC<AppDefaultWindowProps> = ({ id }) => {
 
   if (!window) return null;
 
-  const excludeProperties = ['windowComponent', 'windowComponentKey'];
+  const excludeProperties = ['']; // Add properties to exclude if needed
 
   return (
     <div className="flex flex-col">
@@ -56,4 +56,4 @@ const AppDefaultWindow: React.FC<AppDefaultWindowProps> = ({ id }) => {
   );
 };
 
-export default AppDefaultWindow;
+export default DefaultWindow;
